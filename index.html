@@ -8,23 +8,18 @@
     <style>
         /* --- 1. AESTHETIC RED & BLACK THEME --- */
         :root {
-            /* Core Colors */
-            --primary: #FF1744; /* Bright Red */
+            --primary: #FF1744;
             --primary-dark: #D50000;
-            --bg: #000000; /* Pure Black */
-            --surface: #121212; /* Dark Grey Surface */
-            --surface-2: #1E1E1E; /* Lighter Grey for cards */
+            --bg: #000000;
+            --surface: #121212;
+            --surface-2: #1E1E1E;
             --border: #333333;
-            
-            /* Text */
             --text-main: #FFFFFF;
             --text-sec: #A0A0A0;
-            
-            /* Elements */
             --input-bg: #1E1E1E;
             --bubble-mine: #FF1744;
             --bubble-theirs: #2C2C2C;
-            --shadow: 0 8px 30px rgba(255, 23, 68, 0.15); /* Red Glow */
+            --shadow: 0 8px 30px rgba(255, 23, 68, 0.15);
         }
 
         /* RESET & LAYOUT */
@@ -33,7 +28,7 @@
         body { 
             margin: 0; 
             background-color: var(--bg); 
-            height: 100dvh; /* Dynamic height for mobile */
+            height: 100dvh; 
             width: 100vw; 
             overflow: hidden; 
             color: var(--text-main);
@@ -52,59 +47,32 @@
 
         /* --- 2. SCREEN MANAGEMENT --- */
         .screen { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
+            position: absolute; top: 0; left: 0; 
+            width: 100%; height: 100%; 
             background: var(--bg); 
-            display: none; 
-            flex-direction: column; 
+            display: none; flex-direction: column; 
             z-index: 10;
         }
-        
-        .screen.active { 
-            display: flex; 
-            z-index: 20;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        
+        .screen.active { display: flex; z-index: 20; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* --- 3. UI COMPONENTS --- */
-        
-        /* Header */
         .header { 
-            height: 60px; 
-            flex-shrink: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 0 20px; 
-            background: rgba(18, 18, 18, 0.95); 
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border); 
-            z-index: 50;
+            height: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 20px; background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border); z-index: 50;
         }
         .header h1 { font-size: 22px; font-weight: 800; margin: 0; color: var(--primary); letter-spacing: 1px; text-transform: uppercase; }
         .icon-btn { background: none; border: none; font-size: 18px; color: var(--text-main); cursor: pointer; padding: 8px; border-radius: 50%; transition: 0.2s; }
         
-        /* Content Area */
         .content-area { 
-            flex: 1; 
-            overflow-y: auto; 
-            position: relative; 
-            display: flex; 
-            flex-direction: column; 
-            scrollbar-width: thin;
-            scrollbar-color: var(--surface-2) var(--bg);
+            flex: 1; overflow-y: auto; position: relative; display: flex; flex-direction: column; 
+            scrollbar-width: thin; scrollbar-color: var(--surface-2) var(--bg);
         }
 
-        /* Tabs */
         .tab-view { flex: 1; display: none; flex-direction: column; height: 100%; }
         .tab-view.active { display: flex; animation: fadeIn 0.2s; }
 
-        /* Lists */
         .list-item { padding: 16px 20px; display: flex; align-items: center; cursor: pointer; background: var(--bg); border-bottom: 1px solid var(--border); transition: 0.2s; }
         .list-item:active { background: var(--surface); }
         .avatar { width: 50px; height: 50px; background: var(--surface-2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 15px; flex-shrink: 0; border: 2px solid var(--border); color: var(--text-main); }
@@ -113,40 +81,14 @@
         .item-sub { color: var(--text-sec); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .timestamp { font-size: 11px; color: var(--text-sec); }
 
-        /* Forms & Inputs */
         .form-container { padding: 30px; display: flex; flex-direction: column; justify-content: center; height: 100%; background: var(--bg); }
-        input { 
-            width: 100%; 
-            padding: 16px; 
-            background: var(--input-bg); 
-            border: 1px solid var(--border); 
-            border-radius: 12px; 
-            font-size: 16px; 
-            outline: none; 
-            color: var(--text-main); 
-            margin-bottom: 15px; 
-        }
+        input { width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; font-size: 16px; outline: none; color: var(--text-main); margin-bottom: 15px; }
         input:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
         
-        .primary-btn { 
-            width: 100%; 
-            padding: 16px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            margin-top: 10px; 
-            box-shadow: var(--shadow);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
+        .primary-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; box-shadow: var(--shadow); letter-spacing: 0.5px; text-transform: uppercase; }
         .secondary-btn { width: 100%; padding: 16px; background: transparent; color: var(--text-sec); border: 1px solid var(--border); border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .error-box { color: var(--primary); border: 1px solid var(--primary); font-size: 14px; text-align: center; margin-bottom: 15px; display: none; padding: 12px; background: rgba(255, 23, 68, 0.1); border-radius: 8px; }
 
-        /* Chat Room */
         .chat-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
         .message { max-width: 75%; padding: 12px 16px; border-radius: 20px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; }
         .msg-mine { align-self: flex-end; background: var(--bubble-mine); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(255, 23, 68, 0.2); }
@@ -154,34 +96,25 @@
         .msg-time { font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right; display: block; }
         .chat-footer { padding: 10px 15px; background: var(--surface); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
 
-        /* Profile */
         .profile-hero { padding: 40px 20px; background: var(--bg); display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--border); }
         .lg-avatar { width: 110px; height: 110px; background: var(--surface-2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; margin-bottom: 15px; border: 3px solid var(--primary); box-shadow: var(--shadow); }
         .profile-stats { display: flex; width: 100%; border-bottom: 1px solid var(--border); background: var(--surface); }
         .stat-item { flex: 1; padding: 20px; text-align: center; border-right: 1px solid var(--border); cursor: pointer; }
         .stat-item:last-child { border: none; }
 
-        /* Bottom Nav */
-        .bottom-nav { 
-            height: 65px; 
-            flex-shrink: 0; 
-            background: var(--surface); 
-            border-top: 1px solid var(--border); 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            z-index: 50; 
-            padding-bottom: env(safe-area-inset-bottom); 
-        }
+        .bottom-nav { height: 65px; flex-shrink: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #555; font-size: 10px; cursor: pointer; width: 60px; transition: 0.2s; }
         .nav-item i { font-size: 20px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); }
         .nav-item.active i { filter: drop-shadow(0 0 5px rgba(255, 23, 68, 0.5)); }
+
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-sec); opacity: 0.6; padding: 20px; }
+        .empty-state i { font-size: 40px; margin-bottom: 15px; color: var(--primary); }
     </style>
 </head>
 <body>
 
-<!-- 1. SPLASH SCREEN -->
+<!-- 1. SPLASH -->
 <div id="splash-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
     <div style="font-size: 36px; font-weight: 900; color: var(--primary); letter-spacing: 3px; margin-bottom: 20px;">NAMASTE</div>
     <div style="width: 200px; height: 4px; background: #333; border-radius: 4px; overflow: hidden; margin-bottom: 40px;">
@@ -193,7 +126,7 @@
 
 <div id="app">
 
-    <!-- 2. AUTH SCREEN -->
+    <!-- 2. AUTH -->
     <div id="auth-screen" class="screen active">
         <div class="form-container">
             <div style="text-align: center; margin-bottom: 40px;">
@@ -208,13 +141,13 @@
         </div>
     </div>
 
-    <!-- 3. SETUP SCREEN -->
+    <!-- 3. SETUP -->
     <div id="setup-screen" class="screen">
         <div class="header"><h1 style="flex:1; text-align:center; color: var(--primary);">Profile Setup</h1></div>
         <div class="form-container">
             <div style="text-align: center; margin-bottom: 30px;">
                 <p style="color: var(--text-sec); margin-bottom:10px;">Choose Avatar</p>
-                <input type="text" id="setup-emoji" value="😈" style="width: 90px; height:90px; text-align: center; font-size: 40px; margin: 0 auto; display: block; border-radius: 25px; background: var(--surface);">
+                <input type="text" id="setup-emoji" value="😎" style="width: 90px; height:90px; text-align: center; font-size: 40px; margin: 0 auto; display: block; border-radius: 25px; background: var(--surface);">
             </div>
             <input type="text" id="setup-name" placeholder="Display Name">
             <input type="text" id="setup-username" placeholder="Username (unique)">
@@ -224,15 +157,12 @@
 
     <!-- 4. MAIN APP -->
     <div id="main-screen" class="screen">
-        <!-- Header -->
         <div class="header">
             <h1 id="header-title">NAMASTE</h1>
             <div style="width: 24px;"></div> 
         </div>
 
-        <!-- Content -->
         <div class="content-area">
-            <!-- Search Tab -->
             <div id="tab-search" class="tab-view active">
                 <div style="padding: 20px; background: var(--bg);">
                     <input type="text" placeholder="Search username..." onkeyup="search.run(this.value)" style="margin:0;">
@@ -240,17 +170,14 @@
                 <div id="search-results" style="flex: 1; overflow-y: auto;"></div>
             </div>
 
-            <!-- Calls Tab -->
             <div id="tab-calls" class="tab-view">
                 <div id="calls-list" style="padding-top: 10px;"></div>
             </div>
 
-            <!-- Chats Tab -->
             <div id="tab-chats" class="tab-view">
                 <div id="chat-list-container" style="height: 100%;"></div>
             </div>
 
-            <!-- Profile Tab -->
             <div id="tab-profile" class="tab-view">
                 <div class="profile-hero">
                     <div id="p-avatar" class="lg-avatar"></div>
@@ -276,7 +203,6 @@
             </div>
         </div>
 
-        <!-- Footer Nav -->
         <div class="bottom-nav">
             <div class="nav-item active" id="nav-search" onclick="nav.switch('search')"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></div>
             <div class="nav-item" id="nav-calls" onclick="nav.switch('calls')"><i class="fa-solid fa-phone"></i><span>Calls</span></div>
@@ -291,8 +217,7 @@
             <button class="icon-btn" onclick="nav.back()"><i class="fa-solid fa-arrow-left"></i></button>
             <h1 id="chat-header-name" style="margin-left: 10px; font-size: 18px; flex:1;">User</h1>
             <div style="display:flex; gap:15px;">
-                <!-- DELETE BUTTON -->
-                <button class="icon-btn" onclick="chat.deleteChat()" title="Delete Whole Chat"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
+                <button class="icon-btn" onclick="chat.deleteChat()"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
                 <button class="icon-btn"><i class="fa-solid fa-phone"></i></button>
                 <button class="icon-btn"><i class="fa-solid fa-video"></i></button>
             </div>
@@ -306,7 +231,7 @@
 
 </div>
 
-<!-- LOGIC -->
+<!-- JAVASCRIPT -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
@@ -328,13 +253,11 @@
     let currentUser = null;
     let activeChatId = null;
 
-    // --- Splash Logic ---
     const hideSplash = () => {
         const el = document.getElementById('splash-screen');
         if(el) el.style.display = 'none';
     };
 
-    // --- Navigation ---
     window.nav = {
         switch: (tab) => {
             const title = document.getElementById('header-title');
@@ -343,7 +266,6 @@
 
             document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
-
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`nav-${tab}`).classList.add('active');
 
@@ -362,19 +284,20 @@
         }
     };
 
-    // --- Auth ---
-    let isReg = false;
     window.auth = {
         toggle: () => {
-            isReg = !isReg;
-            document.querySelector('#auth-screen h1').innerText = isReg ? "Create Account" : "Namaste";
-            document.getElementById('btn-auth-action').innerText = isReg ? "Sign Up" : "Login";
-            document.getElementById('btn-auth-toggle').innerText = isReg ? "Already have an account? Login" : "Create new account";
+            const h1 = document.querySelector('#auth-screen h1');
+            const isLogin = h1.innerText === "Namaste";
+            h1.innerText = isLogin ? "Create Account" : "Namaste";
+            document.getElementById('btn-auth-action').innerText = isLogin ? "Sign Up" : "Login";
+            document.getElementById('btn-auth-toggle').innerText = isLogin ? "Already have an account? Login" : "Create new account";
             document.getElementById('auth-error').style.display = 'none';
         },
         submit: async () => {
             const e = document.getElementById('email').value;
             const p = document.getElementById('password').value;
+            const h1 = document.querySelector('#auth-screen h1');
+            const isReg = h1.innerText === "Create Account";
             const errBox = document.getElementById('auth-error');
             errBox.style.display = 'none';
             
@@ -391,7 +314,6 @@
         }
     };
 
-    // --- Flow Control ---
     onAuthStateChanged(authObj, async (u) => {
         if(u) {
             currentUser = u;
@@ -414,7 +336,6 @@
         }
     });
 
-    // --- Profile ---
     window.profile = {
         create: async () => {
             const name = document.getElementById('setup-name').value;
@@ -440,7 +361,6 @@
             document.getElementById('p-avatar').innerText = data.avatar;
             document.getElementById('p-name').innerText = data.displayName;
             document.getElementById('p-username').innerText = "@" + data.username;
-            
             document.getElementById('edit-name').value = data.displayName;
             document.getElementById('edit-emoji').value = data.avatar;
         },
@@ -451,17 +371,13 @@
         checkAndSave: async () => {
             const newName = document.getElementById('edit-name').value;
             const newEmoji = document.getElementById('edit-emoji').value;
-            
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                displayName: newName, avatar: newEmoji
-            });
+            await updateDoc(doc(db, "users", currentUser.uid), { displayName: newName, avatar: newEmoji });
             alert("Saved!");
             window.profile.load();
             window.profile.edit();
         }
     };
 
-    // --- Search ---
     window.search = {
         run: (val) => {
             if(val.length < 3) return;
@@ -485,13 +401,14 @@
         }
     };
 
-    // --- Chat ---
+    // FIXED CHAT LOGIC: CLIENT SIDE SORTING
     window.chat = {
         listenList: () => {
-            const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid), orderBy("lastUpdated", "desc"));
+            // Removed orderBy to avoid index requirement error
+            const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid));
+            
             onSnapshot(q, snap => {
                 const cont = document.getElementById('chat-list-container');
-                
                 if(snap.empty) {
                     cont.innerHTML = `
                         <div class="empty-state">
@@ -500,7 +417,14 @@
                         </div>`;
                 } else {
                     cont.innerHTML = '';
-                    snap.forEach(async c => {
+                    // Client-side Sort
+                    const sortedDocs = snap.docs.sort((a, b) => {
+                        const dateA = a.data().lastUpdated ? a.data().lastUpdated.toDate() : new Date(0);
+                        const dateB = b.data().lastUpdated ? b.data().lastUpdated.toDate() : new Date(0);
+                        return dateB - dateA;
+                    });
+
+                    sortedDocs.forEach(async c => {
                         const data = c.data();
                         const otherId = data.participants.find(x => x !== currentUser.uid);
                         const uSnap = await getDoc(doc(db, "users", otherId));
@@ -542,7 +466,9 @@
                     const m = d.data();
                     const el = document.createElement('div');
                     el.className = `message ${m.senderId === currentUser.uid ? 'msg-mine' : 'msg-theirs'}`;
-                    el.innerHTML = `${m.text}<span class="msg-time">${m.timestamp ? new Date(m.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...'}</span>`;
+                    // Handle pending timestamp
+                    const time = m.timestamp ? new Date(m.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
+                    el.innerHTML = `${m.text}<span class="msg-time">${time}</span>`;
                     b.appendChild(el);
                 });
                 b.scrollTop = b.scrollHeight;
@@ -553,34 +479,39 @@
             const txt = inp.value.trim();
             if(!txt || !activeChatId) return;
             inp.value = '';
+            
+            // 1. Add Message
             await addDoc(collection(db, "chats", activeChatId, "messages"), { text: txt, senderId: currentUser.uid, timestamp: serverTimestamp() });
-            await updateDoc(doc(db, "chats", activeChatId), { lastMessage: txt, lastSender: currentUser.uid, lastUpdated: serverTimestamp(), seen: false });
+            
+            // 2. Update Chat Parent (Refresh participants for safety)
+            const ids = activeChatId.split("_"); // Re-derive IDs to ensure participants array is always fresh
+            await setDoc(doc(db, "chats", activeChatId), { 
+                lastMessage: txt, 
+                lastSender: currentUser.uid, 
+                lastUpdated: serverTimestamp(), 
+                seen: false,
+                participants: ids 
+            }, { merge: true });
         },
         deleteChat: async () => {
             if(!activeChatId) return;
-            if(confirm("Are you sure you want to delete this WHOLE chat history?")) {
-                // 1. Delete messages
+            if(confirm("Delete this whole chat?")) {
                 const q = query(collection(db, "chats", activeChatId, "messages"));
                 const snap = await getDocs(q);
                 const batch = writeBatch(db);
                 snap.forEach(d => batch.delete(d.ref));
                 await batch.commit();
-                
-                // 2. Delete chat doc
                 await deleteDoc(doc(db, "chats", activeChatId));
-                
-                // 3. Exit
                 window.nav.back();
             }
         }
     };
 
-    // --- Calls ---
     window.calls = {
         load: async () => {
             const cont = document.getElementById('calls-list');
             cont.innerHTML = '<div style="text-align:center; padding:20px;">Loading...</div>';
-            const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid), orderBy("lastUpdated", "desc"));
+            const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid));
             const snap = await getDocs(q);
             cont.innerHTML = '';
             if(snap.empty) cont.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sec);">No call history</div>';

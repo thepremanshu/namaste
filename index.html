@@ -66,27 +66,6 @@
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #555; font-size: 10px; cursor: pointer; width: 60px; }
         .nav-item.active { color: var(--primary); }
         .nav-item i { font-size: 20px; }
-
-        /* --- VIDEO CALL UI --- */
-        #video-call-screen { background: #000; z-index: 999; display: none; flex-direction: column; position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
-        #video-grid { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        video { object-fit: cover; background: #222; }
-        #remoteVideo { width: 100%; height: 100%; }
-        #localVideo { position: absolute; top: 20px; right: 20px; width: 100px; height: 150px; border-radius: 12px; border: 2px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; object-fit: cover; }
-        
-        .call-status { position: absolute; top: 40px; left: 20px; color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 8px; z-index: 15; }
-        
-        .call-controls { height: 120px; display: flex; justify-content: center; align-items: center; gap: 30px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); position: absolute; bottom: 0; width: 100%; padding-bottom: 20px; z-index: 20; }
-        .call-btn { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; color: white; border: none; transition: 0.2s; }
-        .call-btn:active { transform: scale(0.9); }
-        .btn-end { background: #FF1744; box-shadow: 0 0 15px rgba(255, 23, 68, 0.4); }
-        .btn-mic { background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
-        .btn-cam { background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
-
-        /* Incoming Call Modal */
-        #incoming-call-modal { position: fixed; top: 20px; left: 5%; width: 90%; background: #1E1E1E; padding: 20px; border-radius: 16px; border: 1px solid var(--primary); z-index: 1000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.8); align-items: center; gap: 15px; animation: slideDown 0.5s ease; }
-        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-        .incoming-avatar { width: 50px; height: 50px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
     </style>
 </head>
 <body>
@@ -100,40 +79,6 @@
     <div style="position: absolute; bottom: 40px; font-size: 12px; color: #666; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Developed by PREMANSHU KUMAR</div>
 </div>
 <style>@keyframes loadProgress { 0% { width: 0%; } 50% { width: 40%; } 100% { width: 100%; } }</style>
-
-<!-- HTTPS WARNING -->
-<div id="https-warning" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:10000; align-items:center; justify-content:center; text-align:center; padding:20px;">
-    <h1 style="color:var(--primary);">Security Error</h1>
-    <p>Video/Audio calls require a secure connection.</p>
-    <p>Please use <b>HTTPS://</b> or <b>localhost</b>.</p>
-</div>
-
-<!-- INCOMING CALL POPUP -->
-<div id="incoming-call-modal">
-    <div class="incoming-avatar" id="inc-avatar">😎</div>
-    <div style="flex:1;">
-        <div style="font-weight:bold; font-size:16px;" id="inc-name">User</div>
-        <div style="font-size:12px; color:#aaa;" id="inc-type">Incoming Call...</div>
-    </div>
-    <button onclick="webRTC.answer()" style="background:#00E676; border:none; width:45px; height:45px; border-radius:50%; color:white; cursor: pointer;"><i class="fa-solid fa-phone"></i></button>
-    <button onclick="webRTC.reject()" style="background:#FF1744; border:none; width:45px; height:45px; border-radius:50%; color:white; cursor: pointer;"><i class="fa-solid fa-phone-slash"></i></button>
-</div>
-
-<!-- VIDEO/AUDIO CALL SCREEN -->
-<div id="video-call-screen">
-    <div id="video-grid">
-        <div class="call-status" id="call-status-text">Connecting...</div>
-        <!-- Remote video fills screen -->
-        <video id="remoteVideo" autoplay playsinline></video>
-        <!-- Local video is small PiP -->
-        <video id="localVideo" autoplay playsinline muted></video>
-    </div>
-    <div class="call-controls">
-        <button class="call-btn btn-mic" onclick="webRTC.toggleMic()"><i class="fa-solid fa-microphone"></i></button>
-        <button class="call-btn btn-end" onclick="webRTC.endCall()"><i class="fa-solid fa-phone-slash"></i></button>
-        <button class="call-btn btn-cam" onclick="webRTC.toggleCam()"><i class="fa-solid fa-video"></i></button>
-    </div>
-</div>
 
 <div id="app">
     <!-- AUTH -->
@@ -170,16 +115,20 @@
         </div>
 
         <div class="content-area">
+            <!-- SEARCH -->
             <div id="tab-search" class="tab-view active">
                 <div style="padding:20px;">
                     <input type="text" placeholder="Search username..." onkeyup="search.run(this.value)" style="margin:0;">
                 </div>
                 <div id="search-results"></div>
             </div>
-            <div id="tab-calls" class="tab-view"><div id="calls-list"></div></div>
+            
+            <!-- CHATS -->
             <div id="tab-chats" class="tab-view"><div id="chat-list-container"></div></div>
+            
+            <!-- PROFILE -->
             <div id="tab-profile" class="tab-view">
-                <div class="profile-hero">
+                <div style="padding:40px 20px; display:flex; flex-direction:column; align-items:center; border-bottom:1px solid var(--border);">
                     <div id="p-avatar" class="avatar" style="width:100px; height:100px; font-size:50px;"></div>
                     <h2 id="p-name" style="margin-top:15px;"></h2>
                     <p id="p-username" style="color:var(--primary);">@...</p>
@@ -192,7 +141,6 @@
 
         <div class="bottom-nav">
             <div class="nav-item active" id="nav-search" onclick="nav.switch('search')"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></div>
-            <div class="nav-item" id="nav-calls" onclick="nav.switch('calls')"><i class="fa-solid fa-phone"></i><span>Calls</span></div>
             <div class="nav-item" id="nav-chats" onclick="nav.switch('chats')"><i class="fa-solid fa-comment"></i><span>Chats</span></div>
             <div class="nav-item" id="nav-profile" onclick="nav.switch('profile')"><i class="fa-solid fa-user"></i><span>Profile</span></div>
         </div>
@@ -203,13 +151,8 @@
         <div class="header">
             <button class="icon-btn" onclick="nav.back()"><i class="fa-solid fa-arrow-left"></i></button>
             <h1 id="chat-header-name" style="margin-left:10px; font-size:18px; flex:1;">User</h1>
-            <div style="display:flex; gap:15px;">
-                <button class="icon-btn" onclick="chat.deleteChat()"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
-                <!-- AUDIO CALL -->
-                <button class="icon-btn" onclick="webRTC.initCall(false)"><i class="fa-solid fa-phone"></i></button>
-                <!-- VIDEO CALL -->
-                <button class="icon-btn" onclick="webRTC.initCall(true)"><i class="fa-solid fa-video"></i></button>
-            </div>
+            <!-- DELETE BUTTON ONLY -->
+            <button class="icon-btn" onclick="chat.deleteChat()" title="Delete Chat"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
         </div>
         <div id="chat-messages" class="chat-body"></div>
         <div class="chat-footer">
@@ -234,203 +177,13 @@
         appId: "1:721784358614:web:686a564d8e965694296b77"
     };
 
-    // SECURITY CHECK
-    if(location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        document.getElementById('https-warning').style.display = 'flex';
-    }
-
     const app = initializeApp(firebaseConfig);
     const authObj = getAuth(app);
     const db = getFirestore(app);
     let currentUser = null;
     let activeChatId = null;
-    let currentChatUser = null; 
 
     const hideSplash = () => { document.getElementById('splash-screen').style.display = 'none'; };
-
-    // --- WEBRTC LOGIC (Calls) ---
-    let localStream;
-    let remoteStream;
-    let peerConnection;
-    let callDocId = null;
-    
-    const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
-
-    window.webRTC = {
-        initCall: async (isVideo) => {
-            if(!currentChatUser) return alert("Error: User not found");
-            
-            // 1. ASK PERMISSION
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-                window.webRTC.start(stream, isVideo); // Only proceed if allowed
-            } catch(err) {
-                alert("Permission Denied: Camera/Mic access is required to call.");
-                console.error(err);
-            }
-        },
-
-        start: async (stream, isVideo) => {
-            localStream = stream;
-            
-            // UI
-            document.getElementById('video-call-screen').style.display = 'flex';
-            document.getElementById('localVideo').srcObject = localStream;
-            document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none';
-            document.getElementById('call-status-text').innerText = "Calling...";
-            
-            remoteStream = new MediaStream();
-            document.getElementById('remoteVideo').srcObject = remoteStream;
-
-            // FIRESTORE
-            const callDocRef = doc(collection(db, "calls"));
-            callDocId = callDocRef.id;
-
-            peerConnection = new RTCPeerConnection(servers);
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-            peerConnection.ontrack = event => {
-                event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-            };
-
-            peerConnection.onicecandidate = event => {
-                if(event.candidate) {
-                    addDoc(collection(db, "calls", callDocId, "offerCandidates"), event.candidate.toJSON());
-                }
-            };
-
-            const offerDescription = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offerDescription);
-
-            const offer = { sdp: offerDescription.sdp, type: offerDescription.type };
-
-            await setDoc(callDocRef, {
-                callerId: currentUser.uid,
-                callerName: currentUser.displayName || "User",
-                callerAvatar: "😎",
-                calleeId: currentChatUser.uid,
-                offer: offer,
-                type: isVideo ? 'video' : 'audio',
-                status: 'calling'
-            });
-
-            onSnapshot(callDocRef, (snapshot) => {
-                const data = snapshot.data();
-                if(!peerConnection.currentRemoteDescription && data?.answer) {
-                    const answerDescription = new RTCSessionDescription(data.answer);
-                    peerConnection.setRemoteDescription(answerDescription);
-                    document.getElementById('call-status-text').innerText = "Connected";
-                }
-            });
-
-            onSnapshot(collection(db, "calls", callDocId, "answerCandidates"), (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if(change.type === 'added') {
-                        const candidate = new RTCIceCandidate(change.doc.data());
-                        peerConnection.addIceCandidate(candidate);
-                    }
-                });
-            });
-        },
-
-        answer: async () => {
-            document.getElementById('incoming-call-modal').style.display = 'none';
-            const isVideoCall = window.incomingCallData.type === 'video';
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
-                localStream = stream;
-                
-                document.getElementById('video-call-screen').style.display = 'flex';
-                document.getElementById('localVideo').srcObject = localStream;
-                document.getElementById('localVideo').style.display = isVideoCall ? 'block' : 'none';
-                document.getElementById('call-status-text').innerText = "Connecting...";
-
-                remoteStream = new MediaStream();
-                document.getElementById('remoteVideo').srcObject = remoteStream;
-
-                const callDocRef = doc(db, "calls", window.incomingCallId);
-                const callData = window.incomingCallData;
-
-                peerConnection = new RTCPeerConnection(servers);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-                peerConnection.ontrack = event => {
-                    event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-                };
-
-                peerConnection.onicecandidate = event => {
-                    if(event.candidate) {
-                        addDoc(collection(db, "calls", window.incomingCallId, "answerCandidates"), event.candidate.toJSON());
-                    }
-                };
-
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
-                const answerDescription = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answerDescription);
-
-                const answer = { type: answerDescription.type, sdp: answerDescription.sdp };
-
-                await updateDoc(callDocRef, { answer });
-
-                onSnapshot(collection(db, "calls", window.incomingCallId, "offerCandidates"), (snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        if(change.type === 'added') {
-                            const candidate = new RTCIceCandidate(change.doc.data());
-                            peerConnection.addIceCandidate(candidate);
-                        }
-                    });
-                });
-                
-                callDocId = window.incomingCallId;
-                document.getElementById('call-status-text').innerText = "Connected";
-
-            } catch(e) {
-                alert("Permission Denied.");
-            }
-        },
-
-        reject: async () => {
-             document.getElementById('incoming-call-modal').style.display = 'none';
-        },
-
-        endCall: () => {
-            if(localStream) localStream.getTracks().forEach(t => t.stop());
-            if(peerConnection) peerConnection.close();
-            document.getElementById('video-call-screen').style.display = 'none';
-            localStream = null;
-            peerConnection = null;
-        },
-        toggleMic: () => {
-            if(localStream) {
-                const track = localStream.getAudioTracks()[0];
-                track.enabled = !track.enabled;
-            }
-        },
-        toggleCam: () => {
-            if(localStream) {
-                const track = localStream.getVideoTracks()[0];
-                if(track) track.enabled = !track.enabled;
-            }
-        }
-    };
-
-    const listenForCalls = () => {
-        const q = query(collection(db, "calls"), where("calleeId", "==", currentUser.uid), where("status", "==", "calling"));
-        onSnapshot(q, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if(change.type === 'added') {
-                    const data = change.doc.data();
-                    window.incomingCallId = change.doc.id;
-                    window.incomingCallData = data;
-                    document.getElementById('inc-name').innerText = data.callerName;
-                    document.getElementById('inc-avatar').innerText = data.callerAvatar;
-                    document.getElementById('inc-type').innerText = "Incoming " + (data.type === 'video' ? "Video" : "Audio") + " Call...";
-                    document.getElementById('incoming-call-modal').style.display = 'flex';
-                }
-            });
-        });
-    };
 
     window.nav = {
         switch: (tab) => {
@@ -448,7 +201,7 @@
             el.style.display = 'flex'; 
             setTimeout(() => el.classList.add('active'), 10);
         },
-        back: () => { window.nav.showScreen('main-screen'); activeChatId = null; currentChatUser = null; }
+        back: () => { window.nav.showScreen('main-screen'); activeChatId = null; }
     };
 
     window.auth = {
@@ -484,7 +237,6 @@
                     window.nav.showScreen('main-screen');
                     window.nav.switch('search');
                     window.chat.listenList();
-                    listenForCalls(); 
                 } else { window.nav.showScreen('setup-screen'); }
                 hideSplash();
             }, 2000);
@@ -501,7 +253,7 @@
             const snap = await getDocs(q);
             if(!snap.empty) return alert("Username taken!");
             await setDoc(doc(db, "users", currentUser.uid), { uid: currentUser.uid, displayName: name, username: user, avatar: emoji, email: currentUser.email });
-            window.nav.showScreen('main-screen'); window.nav.switch('search'); window.chat.listenList(); listenForCalls();
+            window.nav.showScreen('main-screen'); window.nav.switch('search'); window.chat.listenList();
         },
         load: async () => {
             const d = await getDoc(doc(db, "users", currentUser.uid));
@@ -538,7 +290,7 @@
             const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid));
             onSnapshot(q, snap => {
                 const cont = document.getElementById('chat-list-container');
-                if(snap.empty) cont.innerHTML = `<div class="empty-state"><i class="fa-regular fa-comments"></i><p>NO CHATS</p></div>`;
+                if(snap.empty) cont.innerHTML = `<div style="padding:40px; text-align:center; color:#666;"><i class="fa-regular fa-comments" style="font-size:40px; margin-bottom:10px;"></i><p>NO CHATS</p></div>`;
                 else {
                     cont.innerHTML = '';
                     const docs = snap.docs.sort((a,b) => (b.data().lastUpdated?.toDate() || 0) - (a.data().lastUpdated?.toDate() || 0));
@@ -565,7 +317,6 @@
         },
         open: (cid, u) => {
             activeChatId = cid;
-            currentChatUser = u; // Save for calls
             document.getElementById('chat-header-name').innerText = u.displayName;
             window.nav.showScreen('chat-room');
             const q = query(collection(db, "chats", cid, "messages"), orderBy("timestamp", "asc"));

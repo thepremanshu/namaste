@@ -199,9 +199,9 @@
             <div style="display:flex; gap:15px;">
                 <button class="icon-btn" onclick="chat.deleteChat()"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
                 <!-- AUDIO CALL -->
-                <button class="icon-btn" onclick="webRTC.startCall(false)"><i class="fa-solid fa-phone"></i></button>
+                <button class="icon-btn" onclick="webRTC.requestCall(false)"><i class="fa-solid fa-phone"></i></button>
                 <!-- VIDEO CALL -->
-                <button class="icon-btn" onclick="webRTC.startCall(true)"><i class="fa-solid fa-video"></i></button>
+                <button class="icon-btn" onclick="webRTC.requestCall(true)"><i class="fa-solid fa-video"></i></button>
             </div>
         </div>
         <div id="chat-messages" class="chat-body"></div>
@@ -232,7 +232,7 @@
     const db = getFirestore(app);
     let currentUser = null;
     let activeChatId = null;
-    let currentChatUser = null; // Store user obj for call
+    let currentChatUser = null;
 
     const hideSplash = () => { document.getElementById('splash-screen').style.display = 'none'; };
 
@@ -241,9 +241,7 @@
     let remoteStream;
     let peerConnection;
     let callDocId = null;
-    let callType = 'video'; // 'video' or 'audio'
     
-    // Using Google's public STUN servers
     const servers = {
         iceServers: [
             { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
@@ -251,28 +249,39 @@
     };
 
     window.webRTC = {
-        startCall: async (isVideo) => {
+        // 1. Step One: Request Permission -> Then Start Call
+        requestCall: async (isVideo) => {
             if(!currentChatUser) return;
-            callType = isVideo ? 'video' : 'audio';
             
-            // 1. Ask Permissions FIRST
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-            } catch(e) {
-                alert("Permission Denied: Cannot start call without Camera/Mic access.");
+            // Security check for HTTPS
+            if(location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                alert("Video calls require HTTPS (Secure Connection).");
                 return;
             }
 
-            // 2. Show UI
+            try {
+                // This line FORCES the browser prompt to appear
+                const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+                
+                // If we get here, PERMISSION WAS GRANTED. Now start the call logic.
+                window.webRTC.initiateCallLogic(stream, isVideo);
+
+            } catch(error) {
+                console.error(error);
+                alert("Permission Denied: You must allow Camera/Microphone access to start a call.");
+            }
+        },
+
+        initiateCallLogic: async (stream, isVideo) => {
+            localStream = stream;
             document.getElementById('video-call-screen').style.display = 'flex';
             document.getElementById('localVideo').srcObject = localStream;
-            document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none'; // Hide own video if audio call
+            document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none';
             document.getElementById('call-status-text').innerText = "Calling...";
             
             remoteStream = new MediaStream();
             document.getElementById('remoteVideo').srcObject = remoteStream;
 
-            // 3. Setup Connection
             const callDocRef = doc(collection(db, "calls"));
             callDocId = callDocRef.id;
 
@@ -289,14 +298,10 @@
                 }
             };
 
-            // 4. Create Offer
             const offerDescription = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offerDescription);
 
-            const offer = {
-                sdp: offerDescription.sdp,
-                type: offerDescription.type,
-            };
+            const offer = { sdp: offerDescription.sdp, type: offerDescription.type };
 
             await setDoc(callDocRef, {
                 callerId: currentUser.uid,
@@ -304,11 +309,10 @@
                 callerAvatar: "😎",
                 calleeId: currentChatUser.uid,
                 offer: offer,
-                type: callType,
+                type: isVideo ? 'video' : 'audio',
                 status: 'calling'
             });
 
-            // 5. Wait for Answer
             onSnapshot(callDocRef, (snapshot) => {
                 const data = snapshot.data();
                 if(!peerConnection.currentRemoteDescription && data?.answer) {
@@ -318,7 +322,6 @@
                 }
             });
 
-            // 6. Listen for Remote ICE
             onSnapshot(collection(db, "calls", callDocId, "answerCandidates"), (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     if(change.type === 'added') {
@@ -329,80 +332,73 @@
             });
         },
 
+        // Receiver Answer Logic
         answer: async () => {
             document.getElementById('incoming-call-modal').style.display = 'none';
             const isVideoCall = window.incomingCallData.type === 'video';
             
-            // 1. Get Permission
             try {
+                // Ask permissions first
                 localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
-            } catch(e) {
-                alert("Permission Denied.");
-                return;
-            }
+                
+                // Permission Granted -> Proceed
+                document.getElementById('video-call-screen').style.display = 'flex';
+                document.getElementById('localVideo').srcObject = localStream;
+                document.getElementById('localVideo').style.display = isVideoCall ? 'block' : 'none';
+                document.getElementById('call-status-text').innerText = "Connecting...";
 
-            document.getElementById('video-call-screen').style.display = 'flex';
-            document.getElementById('localVideo').srcObject = localStream;
-            document.getElementById('localVideo').style.display = isVideoCall ? 'block' : 'none';
-            document.getElementById('call-status-text').innerText = "Connecting...";
+                remoteStream = new MediaStream();
+                document.getElementById('remoteVideo').srcObject = remoteStream;
 
-            remoteStream = new MediaStream();
-            document.getElementById('remoteVideo').srcObject = remoteStream;
+                const callDocRef = doc(db, "calls", window.incomingCallId);
+                const callData = window.incomingCallData;
 
-            const callDocRef = doc(db, "calls", window.incomingCallId);
-            const callData = window.incomingCallData;
+                peerConnection = new RTCPeerConnection(servers);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-            peerConnection = new RTCPeerConnection(servers);
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                peerConnection.ontrack = event => {
+                    event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+                };
 
-            peerConnection.ontrack = event => {
-                event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-            };
-
-            peerConnection.onicecandidate = event => {
-                if(event.candidate) {
-                    addDoc(collection(db, "calls", window.incomingCallId, "answerCandidates"), event.candidate.toJSON());
-                }
-            };
-
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
-            const answerDescription = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answerDescription);
-
-            const answer = {
-                type: answerDescription.type,
-                sdp: answerDescription.sdp,
-            };
-
-            await updateDoc(callDocRef, { answer });
-
-            onSnapshot(collection(db, "calls", window.incomingCallId, "offerCandidates"), (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if(change.type === 'added') {
-                        const candidate = new RTCIceCandidate(change.doc.data());
-                        peerConnection.addIceCandidate(candidate);
+                peerConnection.onicecandidate = event => {
+                    if(event.candidate) {
+                        addDoc(collection(db, "calls", window.incomingCallId, "answerCandidates"), event.candidate.toJSON());
                     }
+                };
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
+                const answerDescription = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answerDescription);
+
+                const answer = { type: answerDescription.type, sdp: answerDescription.sdp };
+
+                await updateDoc(callDocRef, { answer });
+
+                onSnapshot(collection(db, "calls", window.incomingCallId, "offerCandidates"), (snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if(change.type === 'added') {
+                            const candidate = new RTCIceCandidate(change.doc.data());
+                            peerConnection.addIceCandidate(candidate);
+                        }
+                    });
                 });
-            });
-            
-            callDocId = window.incomingCallId;
-            document.getElementById('call-status-text').innerText = "Connected";
+                
+                callDocId = window.incomingCallId;
+                document.getElementById('call-status-text').innerText = "Connected";
+
+            } catch(e) {
+                alert("Permission Denied. Call Ended.");
+            }
         },
 
         reject: async () => {
              document.getElementById('incoming-call-modal').style.display = 'none';
-             // Logic to update DB status to 'rejected' could go here
         },
 
         endCall: () => {
-            if(localStream) {
-                localStream.getTracks().forEach(t => t.stop());
-            }
-            if(peerConnection) {
-                peerConnection.close();
-            }
+            if(localStream) localStream.getTracks().forEach(t => t.stop());
+            if(peerConnection) peerConnection.close();
             document.getElementById('video-call-screen').style.display = 'none';
-            // Cleanup
             localStream = null;
             peerConnection = null;
         },
@@ -429,7 +425,6 @@
                     const data = change.doc.data();
                     window.incomingCallId = change.doc.id;
                     window.incomingCallData = data;
-                    
                     document.getElementById('inc-name').innerText = data.callerName;
                     document.getElementById('inc-avatar').innerText = data.callerAvatar;
                     document.getElementById('inc-type').innerText = "Incoming " + (data.type === 'video' ? "Video" : "Audio") + " Call...";

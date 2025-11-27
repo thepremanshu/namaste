@@ -6,7 +6,7 @@
     <title>Namaste Chat</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* --- THEME --- */
+        /* --- AESTHETIC RED & BLACK THEME --- */
         :root {
             --primary: #FF1744;
             --bg: #000000;
@@ -68,19 +68,24 @@
         .nav-item i { font-size: 20px; }
 
         /* --- VIDEO CALL UI --- */
-        #video-call-screen { background: #000; z-index: 999; display: none; flex-direction: column; justify-content: space-between; position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #video-call-screen { background: #000; z-index: 999; display: none; flex-direction: column; position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
         #video-grid { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         video { object-fit: cover; background: #222; }
         #remoteVideo { width: 100%; height: 100%; }
-        #localVideo { position: absolute; top: 20px; right: 20px; width: 100px; height: 150px; border-radius: 12px; border: 2px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; }
-        .call-controls { height: 100px; display: flex; justify-content: center; align-items: center; gap: 30px; background: rgba(0,0,0,0.5); position: absolute; bottom: 0; width: 100%; padding-bottom: 20px; }
-        .call-btn { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; color: white; border: none; }
-        .btn-end { background: #FF1744; }
-        .btn-mic { background: #333; }
-        .btn-cam { background: #333; }
+        #localVideo { position: absolute; top: 20px; right: 20px; width: 100px; height: 150px; border-radius: 12px; border: 2px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 10; object-fit: cover; }
+        
+        .call-status { position: absolute; top: 40px; left: 20px; color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 8px; z-index: 15; }
+        
+        .call-controls { height: 120px; display: flex; justify-content: center; align-items: center; gap: 30px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); position: absolute; bottom: 0; width: 100%; padding-bottom: 20px; z-index: 20; }
+        .call-btn { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; color: white; border: none; transition: 0.2s; }
+        .call-btn:active { transform: scale(0.9); }
+        .btn-end { background: #FF1744; box-shadow: 0 0 15px rgba(255, 23, 68, 0.4); }
+        .btn-mic { background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
+        .btn-cam { background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
 
         /* Incoming Call Modal */
-        #incoming-call-modal { position: fixed; top: 20px; left: 5%; width: 90%; background: var(--surface-2); padding: 20px; border-radius: 16px; border: 1px solid var(--primary); z-index: 1000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.5); align-items: center; gap: 15px; }
+        #incoming-call-modal { position: fixed; top: 20px; left: 5%; width: 90%; background: #1E1E1E; padding: 20px; border-radius: 16px; border: 1px solid var(--primary); z-index: 1000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.8); align-items: center; gap: 15px; animation: slideDown 0.5s ease; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
         .incoming-avatar { width: 50px; height: 50px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
     </style>
 </head>
@@ -101,16 +106,19 @@
     <div class="incoming-avatar" id="inc-avatar">😎</div>
     <div style="flex:1;">
         <div style="font-weight:bold; font-size:16px;" id="inc-name">User</div>
-        <div style="font-size:12px; color:#aaa;">Incoming Video Call...</div>
+        <div style="font-size:12px; color:#aaa;" id="inc-type">Incoming Call...</div>
     </div>
-    <button onclick="webRTC.answer()" style="background:#00E676; border:none; width:40px; height:40px; border-radius:50%; color:white;"><i class="fa-solid fa-phone"></i></button>
-    <button onclick="webRTC.reject()" style="background:#FF1744; border:none; width:40px; height:40px; border-radius:50%; color:white;"><i class="fa-solid fa-phone-slash"></i></button>
+    <button onclick="webRTC.answer()" style="background:#00E676; border:none; width:45px; height:45px; border-radius:50%; color:white; cursor: pointer;"><i class="fa-solid fa-phone"></i></button>
+    <button onclick="webRTC.reject()" style="background:#FF1744; border:none; width:45px; height:45px; border-radius:50%; color:white; cursor: pointer;"><i class="fa-solid fa-phone-slash"></i></button>
 </div>
 
-<!-- VIDEO CALL SCREEN -->
+<!-- VIDEO/AUDIO CALL SCREEN -->
 <div id="video-call-screen">
     <div id="video-grid">
+        <div class="call-status" id="call-status-text">Connecting...</div>
+        <!-- Remote video fills screen -->
         <video id="remoteVideo" autoplay playsinline></video>
+        <!-- Local video is small PiP -->
         <video id="localVideo" autoplay playsinline muted></video>
     </div>
     <div class="call-controls">
@@ -136,7 +144,7 @@
 
     <!-- SETUP SCREEN -->
     <div id="setup-screen" class="screen">
-        <div class="header"><h1 style="flex:1; text-align:center;">Setup Profile</h1></div>
+        <div class="header"><h1 style="flex:1; text-align:center;">Profile Setup</h1></div>
         <div class="form-container">
             <div style="text-align:center; margin-bottom:20px;">
                 <input type="text" id="setup-emoji" value="😎" style="width:80px; height:80px; text-align:center; font-size:40px; margin:0 auto; display:block; border-radius:50%; background:var(--surface);">
@@ -190,8 +198,10 @@
             <h1 id="chat-header-name" style="margin-left:10px; font-size:18px; flex:1;">User</h1>
             <div style="display:flex; gap:15px;">
                 <button class="icon-btn" onclick="chat.deleteChat()"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
-                <!-- START VIDEO CALL BUTTON -->
-                <button class="icon-btn" onclick="webRTC.startCall()"><i class="fa-solid fa-video"></i></button>
+                <!-- AUDIO CALL -->
+                <button class="icon-btn" onclick="webRTC.startCall(false)"><i class="fa-solid fa-phone"></i></button>
+                <!-- VIDEO CALL -->
+                <button class="icon-btn" onclick="webRTC.startCall(true)"><i class="fa-solid fa-video"></i></button>
             </div>
         </div>
         <div id="chat-messages" class="chat-body"></div>
@@ -226,13 +236,14 @@
 
     const hideSplash = () => { document.getElementById('splash-screen').style.display = 'none'; };
 
-    // --- WEBRTC LOGIC ---
+    // --- WEBRTC LOGIC (Calls) ---
     let localStream;
     let remoteStream;
     let peerConnection;
     let callDocId = null;
+    let callType = 'video'; // 'video' or 'audio'
     
-    // Free Public STUN servers
+    // Using Google's public STUN servers
     const servers = {
         iceServers: [
             { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
@@ -240,21 +251,31 @@
     };
 
     window.webRTC = {
-        startCall: async () => {
+        startCall: async (isVideo) => {
             if(!currentChatUser) return;
-            document.getElementById('video-call-screen').style.display = 'flex';
+            callType = isVideo ? 'video' : 'audio';
             
-            // 1. Get Local Media
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            // 1. Ask Permissions FIRST
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+            } catch(e) {
+                alert("Permission Denied: Cannot start call without Camera/Mic access.");
+                return;
+            }
+
+            // 2. Show UI
+            document.getElementById('video-call-screen').style.display = 'flex';
             document.getElementById('localVideo').srcObject = localStream;
+            document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none'; // Hide own video if audio call
+            document.getElementById('call-status-text').innerText = "Calling...";
+            
             remoteStream = new MediaStream();
             document.getElementById('remoteVideo').srcObject = remoteStream;
 
-            // 2. Create Call Doc
+            // 3. Setup Connection
             const callDocRef = doc(collection(db, "calls"));
             callDocId = callDocRef.id;
 
-            // 3. Create Peer Connection
             peerConnection = new RTCPeerConnection(servers);
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
@@ -262,13 +283,13 @@
                 event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
             };
 
-            // 4. Create Offer
             peerConnection.onicecandidate = event => {
                 if(event.candidate) {
                     addDoc(collection(db, "calls", callDocId, "offerCandidates"), event.candidate.toJSON());
                 }
             };
 
+            // 4. Create Offer
             const offerDescription = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offerDescription);
 
@@ -280,18 +301,20 @@
             await setDoc(callDocRef, {
                 callerId: currentUser.uid,
                 callerName: currentUser.displayName || "User",
-                callerAvatar: "😎", // Simplify for demo
+                callerAvatar: "😎",
                 calleeId: currentChatUser.uid,
                 offer: offer,
+                type: callType,
                 status: 'calling'
             });
 
-            // 5. Listen for Answer
+            // 5. Wait for Answer
             onSnapshot(callDocRef, (snapshot) => {
                 const data = snapshot.data();
                 if(!peerConnection.currentRemoteDescription && data?.answer) {
                     const answerDescription = new RTCSessionDescription(data.answer);
                     peerConnection.setRemoteDescription(answerDescription);
+                    document.getElementById('call-status-text').innerText = "Connected";
                 }
             });
 
@@ -306,18 +329,28 @@
             });
         },
 
-        // Called when user sees incoming call popup
         answer: async () => {
             document.getElementById('incoming-call-modal').style.display = 'none';
-            document.getElementById('video-call-screen').style.display = 'flex';
+            const isVideoCall = window.incomingCallData.type === 'video';
             
-            const callDocRef = doc(db, "calls", window.incomingCallId);
-            const callData = window.incomingCallData;
+            // 1. Get Permission
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+            } catch(e) {
+                alert("Permission Denied.");
+                return;
+            }
 
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('video-call-screen').style.display = 'flex';
             document.getElementById('localVideo').srcObject = localStream;
+            document.getElementById('localVideo').style.display = isVideoCall ? 'block' : 'none';
+            document.getElementById('call-status-text').innerText = "Connecting...";
+
             remoteStream = new MediaStream();
             document.getElementById('remoteVideo').srcObject = remoteStream;
+
+            const callDocRef = doc(db, "calls", window.incomingCallId);
+            const callData = window.incomingCallData;
 
             peerConnection = new RTCPeerConnection(servers);
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
@@ -343,7 +376,6 @@
 
             await updateDoc(callDocRef, { answer });
 
-            // Listen for Caller ICE
             onSnapshot(collection(db, "calls", window.incomingCallId, "offerCandidates"), (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     if(change.type === 'added') {
@@ -354,30 +386,41 @@
             });
             
             callDocId = window.incomingCallId;
+            document.getElementById('call-status-text').innerText = "Connected";
         },
 
         reject: async () => {
              document.getElementById('incoming-call-modal').style.display = 'none';
-             // Update status to rejected if needed
+             // Logic to update DB status to 'rejected' could go here
         },
 
         endCall: () => {
-            if(localStream) localStream.getTracks().forEach(t => t.stop());
-            if(peerConnection) peerConnection.close();
+            if(localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+            }
+            if(peerConnection) {
+                peerConnection.close();
+            }
             document.getElementById('video-call-screen').style.display = 'none';
-            // Optional: delete call doc or update status to 'ended'
+            // Cleanup
+            localStream = null;
+            peerConnection = null;
         },
         toggleMic: () => {
-            const track = localStream.getAudioTracks()[0];
-            track.enabled = !track.enabled;
+            if(localStream) {
+                const track = localStream.getAudioTracks()[0];
+                track.enabled = !track.enabled;
+            }
         },
         toggleCam: () => {
-            const track = localStream.getVideoTracks()[0];
-            track.enabled = !track.enabled;
+            if(localStream) {
+                const track = localStream.getVideoTracks()[0];
+                if(track) track.enabled = !track.enabled;
+            }
         }
     };
 
-    // --- LISTENER FOR INCOMING CALLS ---
+    // --- LISTEN FOR CALLS ---
     const listenForCalls = () => {
         const q = query(collection(db, "calls"), where("calleeId", "==", currentUser.uid), where("status", "==", "calling"));
         onSnapshot(q, (snapshot) => {
@@ -387,9 +430,9 @@
                     window.incomingCallId = change.doc.id;
                     window.incomingCallData = data;
                     
-                    // Show Popup
                     document.getElementById('inc-name').innerText = data.callerName;
                     document.getElementById('inc-avatar').innerText = data.callerAvatar;
+                    document.getElementById('inc-type').innerText = "Incoming " + (data.type === 'video' ? "Video" : "Audio") + " Call...";
                     document.getElementById('incoming-call-modal').style.display = 'flex';
                 }
             });
@@ -449,7 +492,7 @@
                     window.nav.showScreen('main-screen');
                     window.nav.switch('search');
                     window.chat.listenList();
-                    listenForCalls(); // START LISTENING FOR CALLS
+                    listenForCalls(); 
                 } else { window.nav.showScreen('setup-screen'); }
                 hideSplash();
             }, 2000);

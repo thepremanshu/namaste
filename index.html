@@ -6,7 +6,7 @@
     <title>Namaste Chat</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* --- AESTHETIC RED & BLACK THEME --- */
+        /* --- THEME --- */
         :root {
             --primary: #FF1744;
             --bg: #000000;
@@ -32,7 +32,8 @@
         /* HEADER */
         .header { height: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 50; }
         .header h1 { font-size: 22px; font-weight: 800; margin: 0; color: var(--primary); letter-spacing: 1px; text-transform: uppercase; }
-        .icon-btn { background: none; border: none; font-size: 18px; color: var(--text-main); cursor: pointer; padding: 8px; border-radius: 50%; }
+        .icon-btn { background: none; border: none; font-size: 18px; color: var(--text-main); cursor: pointer; padding: 8px; border-radius: 50%; transition: 0.2s; }
+        .icon-btn:active { background: rgba(255,255,255,0.1); }
 
         /* CONTENT */
         .content-area { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
@@ -66,6 +67,36 @@
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #555; font-size: 10px; cursor: pointer; width: 60px; }
         .nav-item.active { color: var(--primary); }
         .nav-item i { font-size: 20px; }
+
+        /* --- CALL SCREEN UI --- */
+        #video-call-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999; display: none; flex-direction: column;
+        }
+        #video-grid { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        video { object-fit: cover; background: #111; }
+        #remoteVideo { width: 100%; height: 100%; }
+        #localVideo { position: absolute; top: 20px; right: 20px; width: 100px; height: 150px; border-radius: 12px; border: 2px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10; }
+        .call-status { position: absolute; top: 40px; left: 20px; color: white; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; font-size: 14px; z-index: 15; }
+        
+        .call-controls {
+            height: 100px; display: flex; justify-content: center; align-items: center; gap: 30px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            position: absolute; bottom: 0; width: 100%; padding-bottom: 20px;
+        }
+        .call-btn { width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 22px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+        .btn-mic, .btn-cam { background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
+        .btn-end { background: #FF1744; box-shadow: 0 0 15px rgba(255, 23, 68, 0.5); }
+
+        /* INCOMING POPUP */
+        #incoming-call-modal {
+            position: fixed; top: 20px; left: 5%; width: 90%;
+            background: #1E1E1E; padding: 20px; border-radius: 16px;
+            border: 1px solid var(--primary); z-index: 1000; display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); align-items: center; gap: 15px;
+            animation: slideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes slideDown { from { transform: translateY(-150%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -79,6 +110,31 @@
     <div style="position: absolute; bottom: 40px; font-size: 12px; color: #666; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Developed by PREMANSHU KUMAR</div>
 </div>
 <style>@keyframes loadProgress { 0% { width: 0%; } 50% { width: 40%; } 100% { width: 100%; } }</style>
+
+<!-- INCOMING CALL NOTIFICATION -->
+<div id="incoming-call-modal">
+    <div class="avatar" id="inc-avatar" style="font-size:24px;">😎</div>
+    <div style="flex:1;">
+        <div style="font-weight:bold; font-size:16px;" id="inc-name">User</div>
+        <div style="font-size:12px; color:#aaa;" id="inc-type">Incoming Call...</div>
+    </div>
+    <button onclick="webRTC.answer()" style="background:#00E676; border:none; width:45px; height:45px; border-radius:50%; color:white;"><i class="fa-solid fa-phone"></i></button>
+    <button onclick="webRTC.reject()" style="background:#FF1744; border:none; width:45px; height:45px; border-radius:50%; color:white;"><i class="fa-solid fa-phone-slash"></i></button>
+</div>
+
+<!-- VIDEO CALL OVERLAY -->
+<div id="video-call-screen">
+    <div id="video-grid">
+        <div class="call-status" id="call-status-text">Connecting...</div>
+        <video id="remoteVideo" autoplay playsinline></video>
+        <video id="localVideo" autoplay playsinline muted></video>
+    </div>
+    <div class="call-controls">
+        <button class="call-btn btn-mic" onclick="webRTC.toggleMic()"><i class="fa-solid fa-microphone"></i></button>
+        <button class="call-btn btn-end" onclick="webRTC.endCall()"><i class="fa-solid fa-phone-slash"></i></button>
+        <button class="call-btn btn-cam" onclick="webRTC.toggleCam()"><i class="fa-solid fa-video"></i></button>
+    </div>
+</div>
 
 <div id="app">
     <!-- AUTH -->
@@ -115,18 +171,13 @@
         </div>
 
         <div class="content-area">
-            <!-- SEARCH -->
             <div id="tab-search" class="tab-view active">
                 <div style="padding:20px;">
                     <input type="text" placeholder="Search username..." onkeyup="search.run(this.value)" style="margin:0;">
                 </div>
                 <div id="search-results"></div>
             </div>
-            
-            <!-- CHATS -->
             <div id="tab-chats" class="tab-view"><div id="chat-list-container"></div></div>
-            
-            <!-- PROFILE -->
             <div id="tab-profile" class="tab-view">
                 <div style="padding:40px 20px; display:flex; flex-direction:column; align-items:center; border-bottom:1px solid var(--border);">
                     <div id="p-avatar" class="avatar" style="width:100px; height:100px; font-size:50px;"></div>
@@ -139,7 +190,6 @@
             </div>
         </div>
 
-        <!-- BOTTOM NAV (No Call Tab) -->
         <div class="bottom-nav">
             <div class="nav-item active" id="nav-search" onclick="nav.switch('search')"><i class="fa-solid fa-magnifying-glass"></i><span>Search</span></div>
             <div class="nav-item" id="nav-chats" onclick="nav.switch('chats')"><i class="fa-solid fa-comment"></i><span>Chats</span></div>
@@ -152,8 +202,12 @@
         <div class="header">
             <button class="icon-btn" onclick="nav.back()"><i class="fa-solid fa-arrow-left"></i></button>
             <h1 id="chat-header-name" style="margin-left:10px; font-size:18px; flex:1;">User</h1>
-            <!-- DELETE BUTTON ONLY (Video/Audio Icons Removed) -->
-            <button class="icon-btn" onclick="chat.deleteChat()" title="Delete Chat"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
+            <div style="display:flex; gap:15px;">
+                <button class="icon-btn" onclick="chat.deleteChat()"><i class="fa-solid fa-trash" style="color:var(--primary);"></i></button>
+                <!-- CALL ICONS -->
+                <button class="icon-btn" onclick="webRTC.initCall(false)"><i class="fa-solid fa-phone"></i></button>
+                <button class="icon-btn" onclick="webRTC.initCall(true)"><i class="fa-solid fa-video"></i></button>
+            </div>
         </div>
         <div id="chat-messages" class="chat-body"></div>
         <div class="chat-footer">
@@ -178,14 +232,198 @@
         appId: "1:721784358614:web:686a564d8e965694296b77"
     };
 
+    // HTTPS CHECK
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        console.warn("Video calls require HTTPS. Some features may be blocked.");
+    }
+
     const app = initializeApp(firebaseConfig);
     const authObj = getAuth(app);
     const db = getFirestore(app);
     let currentUser = null;
     let activeChatId = null;
+    let currentChatUser = null;
 
     const hideSplash = () => { document.getElementById('splash-screen').style.display = 'none'; };
 
+    // --- WEBRTC LOGIC (Permissions & Signaling) ---
+    let localStream, remoteStream, peerConnection, callDocId;
+    const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+
+    window.webRTC = {
+        // 1. Request Permission First
+        initCall: async (isVideo) => {
+            if (!currentChatUser) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+                // If successful, start logic
+                window.webRTC.start(stream, isVideo);
+            } catch(err) {
+                alert("Permission Denied: You must allow Camera/Mic access to call.");
+                console.error(err);
+            }
+        },
+
+        // 2. Start Logic
+        start: async (stream, isVideo) => {
+            localStream = stream;
+            document.getElementById('video-call-screen').style.display = 'flex';
+            document.getElementById('localVideo').srcObject = localStream;
+            document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none';
+            document.getElementById('call-status-text').innerText = "Calling...";
+            
+            remoteStream = new MediaStream();
+            document.getElementById('remoteVideo').srcObject = remoteStream;
+
+            const callDocRef = doc(collection(db, "calls"));
+            callDocId = callDocRef.id;
+
+            peerConnection = new RTCPeerConnection(servers);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            peerConnection.ontrack = event => {
+                event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+            };
+
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    addDoc(collection(db, "calls", callDocId, "offerCandidates"), event.candidate.toJSON());
+                }
+            };
+
+            const offerDescription = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offerDescription);
+
+            const offer = { sdp: offerDescription.sdp, type: offerDescription.type };
+
+            await setDoc(callDocRef, {
+                callerId: currentUser.uid,
+                callerName: currentUser.displayName || "User",
+                callerAvatar: "😎",
+                calleeId: currentChatUser.uid,
+                offer: offer,
+                type: isVideo ? 'video' : 'audio',
+                status: 'calling'
+            });
+
+            onSnapshot(callDocRef, (snapshot) => {
+                const data = snapshot.data();
+                if (!peerConnection.currentRemoteDescription && data?.answer) {
+                    const answerDescription = new RTCSessionDescription(data.answer);
+                    peerConnection.setRemoteDescription(answerDescription);
+                    document.getElementById('call-status-text').innerText = "Connected";
+                }
+            });
+
+            onSnapshot(collection(db, "calls", callDocId, "answerCandidates"), (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const candidate = new RTCIceCandidate(change.doc.data());
+                        peerConnection.addIceCandidate(candidate);
+                    }
+                });
+            });
+        },
+
+        // 3. Answer Logic
+        answer: async () => {
+            document.getElementById('incoming-call-modal').style.display = 'none';
+            const isVideo = window.incomingCallData.type === 'video';
+            
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+                document.getElementById('video-call-screen').style.display = 'flex';
+                document.getElementById('localVideo').srcObject = localStream;
+                document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none';
+                document.getElementById('call-status-text').innerText = "Connecting...";
+
+                remoteStream = new MediaStream();
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+
+                const callDocRef = doc(db, "calls", window.incomingCallId);
+                const callData = window.incomingCallData;
+
+                peerConnection = new RTCPeerConnection(servers);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                peerConnection.ontrack = event => {
+                    event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+                };
+
+                peerConnection.onicecandidate = event => {
+                    if (event.candidate) {
+                        addDoc(collection(db, "calls", window.incomingCallId, "answerCandidates"), event.candidate.toJSON());
+                    }
+                };
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
+                const answerDescription = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answerDescription);
+
+                const answer = { type: answerDescription.type, sdp: answerDescription.sdp };
+                await updateDoc(callDocRef, { answer });
+
+                onSnapshot(collection(db, "calls", window.incomingCallId, "offerCandidates"), (snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const candidate = new RTCIceCandidate(change.doc.data());
+                            peerConnection.addIceCandidate(candidate);
+                        }
+                    });
+                });
+                
+                callDocId = window.incomingCallId;
+                document.getElementById('call-status-text').innerText = "Connected";
+
+            } catch(e) {
+                alert("Permission Denied. Call Ended.");
+            }
+        },
+
+        reject: async () => {
+             document.getElementById('incoming-call-modal').style.display = 'none';
+        },
+
+        endCall: () => {
+            if(localStream) localStream.getTracks().forEach(t => t.stop());
+            if(peerConnection) peerConnection.close();
+            document.getElementById('video-call-screen').style.display = 'none';
+            localStream = null;
+            peerConnection = null;
+        },
+        toggleMic: () => {
+            if(localStream) {
+                const track = localStream.getAudioTracks()[0];
+                track.enabled = !track.enabled;
+            }
+        },
+        toggleCam: () => {
+            if(localStream) {
+                const track = localStream.getVideoTracks()[0];
+                if(track) track.enabled = !track.enabled;
+            }
+        }
+    };
+
+    // --- LISTENERS ---
+    const listenForCalls = () => {
+        const q = query(collection(db, "calls"), where("calleeId", "==", currentUser.uid), where("status", "==", "calling"));
+        onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    window.incomingCallId = change.doc.id;
+                    window.incomingCallData = data;
+                    document.getElementById('inc-name').innerText = data.callerName;
+                    document.getElementById('inc-avatar').innerText = data.callerAvatar;
+                    document.getElementById('inc-type').innerText = "Incoming " + (data.type === 'video' ? "Video" : "Audio") + " Call";
+                    document.getElementById('incoming-call-modal').style.display = 'flex';
+                }
+            });
+        });
+    };
+
+    // --- APP LOGIC ---
     window.nav = {
         switch: (tab) => {
             const title = document.getElementById('header-title');
@@ -202,7 +440,7 @@
             el.style.display = 'flex'; 
             setTimeout(() => el.classList.add('active'), 10);
         },
-        back: () => { window.nav.showScreen('main-screen'); activeChatId = null; }
+        back: () => { window.nav.showScreen('main-screen'); activeChatId = null; currentChatUser = null; }
     };
 
     window.auth = {
@@ -238,6 +476,7 @@
                     window.nav.showScreen('main-screen');
                     window.nav.switch('search');
                     window.chat.listenList();
+                    listenForCalls(); 
                 } else { window.nav.showScreen('setup-screen'); }
                 hideSplash();
             }, 2000);
@@ -254,7 +493,7 @@
             const snap = await getDocs(q);
             if(!snap.empty) return alert("Username taken!");
             await setDoc(doc(db, "users", currentUser.uid), { uid: currentUser.uid, displayName: name, username: user, avatar: emoji, email: currentUser.email });
-            window.nav.showScreen('main-screen'); window.nav.switch('search'); window.chat.listenList();
+            window.nav.showScreen('main-screen'); window.nav.switch('search'); window.chat.listenList(); listenForCalls();
         },
         load: async () => {
             const d = await getDoc(doc(db, "users", currentUser.uid));
@@ -291,7 +530,7 @@
             const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid));
             onSnapshot(q, snap => {
                 const cont = document.getElementById('chat-list-container');
-                if(snap.empty) cont.innerHTML = `<div style="padding:40px; text-align:center; color:#666;"><i class="fa-regular fa-comments" style="font-size:40px; margin-bottom:10px;"></i><p>NO CHATS</p></div>`;
+                if(snap.empty) cont.innerHTML = `<div class="empty-state"><i class="fa-regular fa-comments"></i><p>NO CHATS</p></div>`;
                 else {
                     cont.innerHTML = '';
                     const docs = snap.docs.sort((a,b) => (b.data().lastUpdated?.toDate() || 0) - (a.data().lastUpdated?.toDate() || 0));
@@ -318,6 +557,7 @@
         },
         open: (cid, u) => {
             activeChatId = cid;
+            currentChatUser = u; // Save user for calls
             document.getElementById('chat-header-name').innerText = u.displayName;
             window.nav.showScreen('chat-room');
             const q = query(collection(db, "chats", cid, "messages"), orderBy("timestamp", "asc"));

@@ -116,9 +116,7 @@
 <div id="video-call-screen">
     <div id="video-grid">
         <div class="call-status" id="call-status-text">Connecting...</div>
-        <!-- Remote video fills screen -->
         <video id="remoteVideo" autoplay playsinline></video>
-        <!-- Local video is small PiP -->
         <video id="localVideo" autoplay playsinline muted></video>
     </div>
     <div class="call-controls">
@@ -129,7 +127,7 @@
 </div>
 
 <div id="app">
-    <!-- AUTH SCREEN -->
+    <!-- AUTH -->
     <div id="auth-screen" class="screen active">
         <div class="form-container">
             <h1 style="color:var(--primary); text-align:center; font-size:36px; margin-bottom:10px;">Namaste</h1>
@@ -142,7 +140,7 @@
         </div>
     </div>
 
-    <!-- SETUP SCREEN -->
+    <!-- SETUP -->
     <div id="setup-screen" class="screen">
         <div class="header"><h1 style="flex:1; text-align:center;">Profile Setup</h1></div>
         <div class="form-container">
@@ -232,7 +230,7 @@
     const db = getFirestore(app);
     let currentUser = null;
     let activeChatId = null;
-    let currentChatUser = null;
+    let currentChatUser = null; 
 
     const hideSplash = () => { document.getElementById('splash-screen').style.display = 'none'; };
 
@@ -242,33 +240,35 @@
     let peerConnection;
     let callDocId = null;
     
-    const servers = {
-        iceServers: [
-            { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
-        ]
-    };
+    const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
 
     window.webRTC = {
-        // 1. Step One: Request Permission -> Then Start Call
+        // 1. REQUEST CALL - Handles Permissions & Security
         requestCall: async (isVideo) => {
-            if(!currentChatUser) return;
+            if(!currentChatUser) {
+                alert("Error: Chat user data missing. Please navigate back and open the chat again.");
+                return;
+            }
             
-            // Security check for HTTPS
+            // Secure Context Check
             if(location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                alert("Video calls require HTTPS (Secure Connection).");
+                alert("Browser Security Error: Video calls only work on HTTPS or localhost.");
+                return;
+            }
+
+            // Permission Check
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Browser Error: Your browser blocked camera/mic access. Please check site settings.");
                 return;
             }
 
             try {
-                // This line FORCES the browser prompt to appear
+                // FORCE PROMPT
                 const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-                
-                // If we get here, PERMISSION WAS GRANTED. Now start the call logic.
+                // Success -> Start
                 window.webRTC.initiateCallLogic(stream, isVideo);
-
             } catch(error) {
-                console.error(error);
-                alert("Permission Denied: You must allow Camera/Microphone access to start a call.");
+                alert("Permission Denied: You denied Camera/Mic access.\n\nGo to Settings > Site Settings > Reset Permissions.");
             }
         },
 
@@ -332,16 +332,14 @@
             });
         },
 
-        // Receiver Answer Logic
         answer: async () => {
             document.getElementById('incoming-call-modal').style.display = 'none';
             const isVideoCall = window.incomingCallData.type === 'video';
             
             try {
-                // Ask permissions first
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+                localStream = stream;
                 
-                // Permission Granted -> Proceed
                 document.getElementById('video-call-screen').style.display = 'flex';
                 document.getElementById('localVideo').srcObject = localStream;
                 document.getElementById('localVideo').style.display = isVideoCall ? 'block' : 'none';
@@ -387,7 +385,7 @@
                 document.getElementById('call-status-text').innerText = "Connected";
 
             } catch(e) {
-                alert("Permission Denied. Call Ended.");
+                alert("Call Failed: Permission Denied");
             }
         },
 
@@ -416,7 +414,6 @@
         }
     };
 
-    // --- LISTEN FOR CALLS ---
     const listenForCalls = () => {
         const q = query(collection(db, "calls"), where("calleeId", "==", currentUser.uid), where("status", "==", "calling"));
         onSnapshot(q, (snapshot) => {
@@ -434,7 +431,6 @@
         });
     };
 
-    // --- STANDARD APP LOGIC ---
     window.nav = {
         switch: (tab) => {
             const title = document.getElementById('header-title');
